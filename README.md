@@ -13,17 +13,13 @@ lesson-8-9/
 ├── outputs.tf            # Загальні виводи ресурсів
 ├── variables.tf          # Кореневі змінні
 ├── modules/
-│   ├── s3-backend/       # S3 + DynamoDB для зберігання Terraform state
-│   ├── vpc/              # VPC, підмережі, маршрути, Internet Gateway, NAT
-│   ├── ecr/              # ECR репозиторій для Docker-образів
-│   ├── eks/              # EKS кластер та node group
-│   ├── jenkins/          # Jenkins, встановлений через Helm
-│   └── argo_cd/          # Argo CD + Helm-чарт з Application'ами
-└── charts/
-    └── django-app/       # Локальний Helm-чарт (демо)
-        ├── templates/    # deployment, service, hpa, configmap
-        ├── Chart.yaml
-        └── values.yaml
+    ├── s3-backend/       # S3 + DynamoDB для зберігання Terraform state
+    ├── vpc/              # VPC, підмережі, маршрути, Internet Gateway, NAT
+    ├── ecr/              # ECR репозиторій для Docker-образів
+    ├── eks/              # EKS кластер та node group
+    ├── jenkins/          # Jenkins, встановлений через Helm
+    └── argo_cd/          # Argo CD + Helm-чарт з Application'ами
+
 ```
 
 ### Огляд модулів
@@ -164,7 +160,10 @@ Jenkins налаштований через **Jenkins Configuration as Code (JCa
 - **AWS ECR консоль** – репозиторій `lesson-8-ecr` (регіон `eu-central-1`), список тегів: `v1.0.X`.
 - **GitHub `devops_test`** – файл `charts/django-app/values.yaml`, поле `image.tag` міститиме останній тег.
 
----
+### Налаштування в інтерфейсі Jenkins
+
+Для того, щоб автоматизувати процес пушу нових данних, вам необхідно Jenkins провалитися в seed-job. Після цього вам необхідно перейти в 
+налаштування і для розділу трігерів збірки поставити голчку напроти GitHub hook trigger for GITScm polling і зберенти ці зміни. Після цього вам необхідно перейти в репозиторій де лежить ваш сам додаток і там необхідно налаштувати вебхук. Тобто в своєму репозиторіі ви заходите в Settings, в лівій менюшці клікаєте по розділу Webhooks, після цього клікаєте на кнопу Add webhook. В полі Payload URL вам необхідно скопіювати урл по якому відкривається ваш Jenkins в браузері і через слеш до цього урла додати github-webhook, в моєму випдку це "http://a84c8e06a20854288856e3f8db650c62-1406678177.eu-central-1.elb.amazonaws.com/github-webhook/." Далі в полі Content type вибираєте значення application/json. І після цього клікаєте зберегти. Після того як ви налаштували це, вам необхідно зібрати вашу джобу seed-job клікнувши всередині джоби на кнопку "Зібрати зараз". Ваша джоба в перший раз скоріше за все зафейлиться і тому вам треба додатково вийти в рутову директорію вашого Jenkins. Зліва в меню у вас буде кнока "Налаштувати Jenkins", клікаєтесь по ній і провалюєтесь в внутрішнє меню. Шукаєте блок "Security" в цьому меню має бути сабменюшка, яка називається In-process Script Approval, зоходите в неї і там клікаїте Approve для Groovy script із назвою вашої джоби "goit-django-docker". Після цього повертаєтеся назад в seed-job і перезапускаєте заново збірку вашої джоби. Після того, як виконалася ця джоба у вас має з"явитися нова джоба з назвою goit-django-docker, вона відповідає за розгортання і оновлення django додатку, який моніториться через Argo CD.
 
 ## Перевірка CD: Argo CD і оновлення релізу
 
